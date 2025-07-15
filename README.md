@@ -38,7 +38,7 @@ Additionally, the project works with **Big Data** concepts, handling expanded an
 
 ## 📞 Contact
 
-For questions or contributions, please contact via GitHub or email.
+For questions or contributions, please contact via GitHub or email: [karlinharural@gmail.com](mailto:karlinharural@gmail.com).
 
 ---
 
