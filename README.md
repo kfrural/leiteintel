@@ -37,5 +37,27 @@ Additionally, the project works with **Big Data** concepts, handling expanded an
 ## ⚙️ How to Run
 
 1. Make sure the data file `leiteintel_base_ampliada.csv` is in the `data/` folder.
-2. Run the app with:
-`streamlit run app.py`
+2. Run the app with: `streamlit run app.py`
+3. At startup, the system checks if the cleaned dataset exists; if not, it automatically generates the processed version.
+4. Use the sidebar to select state, year, and type of analysis.
+5. Explore the charts, tables, and make predictions.
+6. Customize and generate complete PDF reports directly from the app.
+
+---
+
+## 📚 References
+
+- CRISP-DM: [https://www.datascience-pm.com/crisp-dm-2/](https://www.datascience-pm.com/crisp-dm-2/)
+- Big Data in Agribusiness and Dairy Farming
+- Python Libraries: Streamlit, Pandas, Scikit-learn, FPDF
+
+---
+
+## 📞 Contact
+
+For questions or contributions, please contact via GitHub or email.
+
+---
+
+Thank you for using LeiteIntel!  
+Innovation in milk production starts with well-analyzed data.
