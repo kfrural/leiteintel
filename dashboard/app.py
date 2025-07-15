@@ -175,7 +175,7 @@ elif opcao == "📄 Gerar Relatório PDF":
         estado_rel, ano_rel, prod_medio, preco_medio, temp_media, chuva_media, producao_prevista
     )
 
-    # Opções
+
     st.markdown("### 🧩 Escolha o que incluir no relatório:")
     incluir_grafico = st.checkbox("📈 Incluir gráfico de produção", value=True)
     incluir_tab_tipo = st.checkbox("📋 Tabela por tipo de produção", value=True)
