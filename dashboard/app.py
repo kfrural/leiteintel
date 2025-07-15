@@ -95,7 +95,6 @@ elif opcao == "📋 Tabelas":
     })
     st.dataframe(tabela_tecnologia)
 
-
 elif opcao == "🔮 Previsão":
     st.title("🔮 Previsão de Produção de Leite")
     st.markdown("Faça simulações com variáveis para prever a produção estimada.")
