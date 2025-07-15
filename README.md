@@ -1,5 +1,3 @@
-Claro! Aqui está um modelo completo de README para o seu projeto **LeiteIntel - Dashboard de Análise de Produção de Leite**. Você pode ajustar conforme quiser:
-
 ---
 
 # LeiteIntel - Dashboard de Análise de Produção de Leite
