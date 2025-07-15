@@ -12,7 +12,7 @@ import os
 
 st.set_page_config(page_title="LeiteIntel Dashboard", layout="wide")
 
-# === CARREGAR DADOS ===
+
 df = pd.read_csv("data/leiteintel_base_ampliada.csv")
 
 st.sidebar.title("🔧 Configurações")
