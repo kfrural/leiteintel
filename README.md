@@ -35,13 +35,6 @@ Additionally, the project works with **Big Data** concepts, handling expanded an
 
 ---
 
-## 📚 References
-
-- CRISP-DM: [https://www.datascience-pm.com/crisp-dm-2/](https://www.datascience-pm.com/crisp-dm-2/)
-- Big Data in Agribusiness and Dairy Farming
-- Python Libraries: Streamlit, Pandas, Scikit-learn, FPDF
-
----
 
 ## 📞 Contact
 
