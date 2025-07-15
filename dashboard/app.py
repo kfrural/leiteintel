@@ -15,7 +15,7 @@ st.set_page_config(page_title="LeiteIntel Dashboard", layout="wide")
 # === CARREGAR DADOS ===
 df = pd.read_csv("data/leiteintel_base_ampliada.csv")
 
-# === SIDEBAR ===
+
 st.sidebar.title("🔧 Configurações")
 
 estado = st.sidebar.selectbox("Escolha o estado:", sorted(df["estado"].unique()))
