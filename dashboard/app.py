@@ -150,7 +150,7 @@ elif opcao == "📄 Gerar Relatório PDF":
     temp_media = filtro_rel["temperatura_media"].mean()
     chuva_media = filtro_rel["chuvas_mm"].mean()
 
-    # Modelo para previsão no relatório
+
     df_modelo = df[["temperatura_media", "chuvas_mm", "preco_litro", "tipo_producao", "producao_litros"]]
     X = df_modelo.drop("producao_litros", axis=1)
     y = df_modelo["producao_litros"]
