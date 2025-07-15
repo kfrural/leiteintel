@@ -183,7 +183,6 @@ elif opcao == "📄 Gerar Relatório PDF":
     incluir_previsao = st.checkbox("🔮 Incluir previsão de produção", value=True)
     incluir_texto = st.checkbox("📝 Incluir texto analítico", value=True)
 
-    # Prévia na tela
     st.markdown("## 👁️ Pré-visualização do Relatório")
 
     st.markdown(f"**Resumo — {estado_rel} - {ano_rel}:**")
