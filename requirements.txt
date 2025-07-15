@@ -4,3 +4,4 @@ seaborn
 matplotlib
 scikit-learn
 streamlit
+fpdf
