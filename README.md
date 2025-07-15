@@ -24,16 +24,6 @@ Additionally, the project works with **Big Data** concepts, handling expanded an
 - **FPDF** for generating PDF reports.
 - Clear modular organization to ease development and reuse.
 
-## 📁 Project Structure
-
-- `app.py` — main application integrating all components.
-- `componentes.py` — functions for sidebar and widgets.
-- `graficos.py` — functions for creating charts.
-- `modelos.py` — logic for training and prediction.
-- `relatorio.py` — PDF report generation with interpretative analysis.
-- `data/` — folder containing raw and processed data.
-- `relatorios/` — folder where PDF reports are saved.
-
 ## ⚙️ How to Run
 
 1. Make sure the data file `leiteintel_base_ampliada.csv` is in the `data/` folder.
