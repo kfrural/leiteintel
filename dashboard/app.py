@@ -108,7 +108,7 @@ elif opcao == "🔮 Previsão":
     preco_input = col7.slider("Preço por litro (R$)", 1.0, 6.0, float(round(preco_medio, 2)))
     tipo_input = col8.selectbox("Tipo de Produção", df["tipo_producao"].unique())
 
-    # Modelo
+
     df_modelo = df[["temperatura_media", "chuvas_mm", "preco_litro", "tipo_producao", "producao_litros"]]
     X = df_modelo.drop("producao_litros", axis=1)
     y = df_modelo["producao_litros"]
