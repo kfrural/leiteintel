@@ -26,7 +26,6 @@ opcao = st.sidebar.radio("O que deseja visualizar?", ["📊 Visão Geral", "📋
 # === FILTRO DE DADOS ===
 filtro = df[(df["estado"] == estado) & (df["ano"] == ano)]
 
-
 prod_medio = filtro["producao_litros"].mean()
 preco_medio = filtro["preco_litro"].mean()
 temp_media = filtro["temperatura_media"].mean()
