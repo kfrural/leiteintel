@@ -58,7 +58,7 @@ Esta análise auxilia técnicos e produtores a entenderem melhor as condições 
 """
     return texto.strip()
 
-# === VISÃO GERAL ===
+
 if opcao == "📊 Visão Geral":
     st.title("📊 LeiteIntel — Painel de Inteligência de Produção de Leite")
     st.markdown(f"""
