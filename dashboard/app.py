@@ -63,10 +63,21 @@ elif opcao == "📋 Tabelas":
 
     st.markdown("### 🧮 Médias por Tipo de Produção")
     tabela_producao = filtro.groupby("tipo_producao")[["producao_litros", "preco_litro"]].mean().round(1).reset_index()
+    # Renomear colunas para mais amigáveis
+    tabela_producao = tabela_producao.rename(columns={
+        "tipo_producao": "Tipo de Produção",
+        "producao_litros": "Produção / litros",
+        "preco_litro": "Preço / R$"
+    })
     st.dataframe(tabela_producao)
 
     st.markdown("### 🧪 Médias por Uso de Tecnologia")
     tabela_tecnologia = filtro.groupby("uso_tecnologia")[["producao_litros", "preco_litro"]].mean().round(1).reset_index()
+    tabela_tecnologia = tabela_tecnologia.rename(columns={
+        "uso_tecnologia": "Uso de Tecnologia",
+        "producao_litros": "Produção / litros",
+        "preco_litro": "Preço / R$"
+    })
     st.dataframe(tabela_tecnologia)
 
 # === PREVISÃO ===
@@ -153,6 +164,11 @@ elif opcao == "📄 Gerar Relatório PDF":
     if incluir_tab_tipo:
         st.markdown("### 📋 Tabela por Tipo de Produção")
         tabela_producao_rel = filtro_rel.groupby("tipo_producao")[["producao_litros", "preco_litro"]].mean().round(1).reset_index()
+        tabela_producao_rel = tabela_producao_rel.rename(columns={
+            "tipo_producao": "Tipo de Produção",
+            "producao_litros": "Produção / litros",
+            "preco_litro": "Preço / R$"
+        })
         st.dataframe(tabela_producao_rel)
     else:
         tabela_producao_rel = pd.DataFrame()
@@ -160,6 +176,11 @@ elif opcao == "📄 Gerar Relatório PDF":
     if incluir_tab_tecn:
         st.markdown("### 🧪 Tabela por Uso de Tecnologia")
         tabela_tecnologia_rel = filtro_rel.groupby("uso_tecnologia")[["producao_litros", "preco_litro"]].mean().round(1).reset_index()
+        tabela_tecnologia_rel = tabela_tecnologia_rel.rename(columns={
+            "uso_tecnologia": "Uso de Tecnologia",
+            "producao_litros": "Produção / litros",
+            "preco_litro": "Preço / R$"
+        })
         st.dataframe(tabela_tecnologia_rel)
     else:
         tabela_tecnologia_rel = pd.DataFrame()
@@ -227,7 +248,7 @@ A análise busca auxiliar produtores, técnicos e pesquisadores na tomada de dec
             pdf.cell(200, 10, txt="Médias por Tipo de Produção", ln=True)
             pdf.set_font("Arial", size=11)
             for i, row in tabela_producao_rel.iterrows():
-                pdf.cell(200, 8, txt=f"{row['tipo_producao']}: {row['producao_litros']} litros, R$ {row['preco_litro']}/litro", ln=True)
+                pdf.cell(200, 8, txt=f"{row['Tipo de Produção']}: {row['Produção / litros']} litros, R$ {row['Preço / R$']}/litro", ln=True)
 
         # Tabela uso tecnologia
         if not tabela_tecnologia_rel.empty:
@@ -236,7 +257,7 @@ A análise busca auxiliar produtores, técnicos e pesquisadores na tomada de dec
             pdf.cell(200, 10, txt="Médias por Uso de Tecnologia", ln=True)
             pdf.set_font("Arial", size=11)
             for i, row in tabela_tecnologia_rel.iterrows():
-                pdf.cell(200, 8, txt=f"{row['uso_tecnologia']}: {row['producao_litros']} litros, R$ {row['preco_litro']}/litro", ln=True)
+                pdf.cell(200, 8, txt=f"{row['Uso de Tecnologia']}: {row['Produção / litros']} litros, R$ {row['Preço / R$']}/litro", ln=True)
 
         return pdf
 
