@@ -230,7 +230,6 @@ elif opcao == "📄 Gerar Relatório PDF":
     else:
         tabela_tecnologia_rel = pd.DataFrame()
 
-
     def gerar_relatorio_pdf_personalizado():
         pdf = FPDF()
         pdf.add_page()
