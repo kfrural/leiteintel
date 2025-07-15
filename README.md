@@ -38,3 +38,4 @@ Additionally, the project works with **Big Data** concepts, handling expanded an
 
 1. Make sure the data file `leiteintel_base_ampliada.csv` is in the `data/` folder.
 2. Run the app with:
+`streamlit run app.py`
