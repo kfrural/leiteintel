@@ -139,7 +139,6 @@ elif opcao == "📄 Gerar Relatório PDF":
 
     st.markdown("Customize o relatório antes de gerar o PDF com base em seus objetivos.")
 
-
     estado_rel = st.selectbox("📍 Escolha o estado para o relatório:", sorted(df["estado"].unique()), index=list(df["estado"].unique()).index(estado))
     ano_rel = st.slider("📅 Escolha o ano:", int(df["ano"].min()), int(df["ano"].max()), value=ano)
 
