@@ -32,7 +32,6 @@ preco_medio = filtro["preco_litro"].mean()
 temp_media = filtro["temperatura_media"].mean()
 chuva_media = filtro["chuvas_mm"].mean()
 
-
 def grafico_producao():
     fig, ax = plt.subplots(figsize=(10, 4))
     sns.lineplot(data=filtro, x="mes", y="producao_litros", hue="tipo_producao", marker="o", ax=ax)
