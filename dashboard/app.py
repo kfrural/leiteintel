@@ -1,51 +1,27 @@
-# app.py
-
-import sys
-import os
-import pandas as pd
 import streamlit as st
-
-# Ajusta o path para importar módulos locais
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-
-from componentes import mostrar_sidebar
-from graficos import grafico_producao
-from modelos import treinar_modelo
-from relatorios import gerar_pdf_resumo
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+from fpdf import FPDF
+from sklearn.linear_model import LinearRegression
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
+import tempfile
+import os
 
 st.set_page_config(page_title="LeiteIntel Dashboard", layout="wide")
 
-# === PATHS DOS ARQUIVOS ===
-DATA_RAW = "data/leiteintel_base_ampliada.csv"           # arquivo raw na pasta data/
-DATA_CLEAN = "data/processed/leiteintel_base_limpa.csv"  # arquivo limpo na pasta data/processed/
-
-# === FUNÇÃO PARA GERAR BASE LIMPA ===
-def gerar_base_limpa():
-    if not os.path.exists(DATA_RAW):
-        st.error(f"Arquivo raw '{DATA_RAW}' não encontrado. Coloque o arquivo na pasta correta.")
-        st.stop()
-
-    df = pd.read_csv(DATA_RAW)
-    df = df.dropna()
-    df["mes"] = df["mes"].astype(str)
-
-    os.makedirs(os.path.dirname(DATA_CLEAN), exist_ok=True)
-    df.to_csv(DATA_CLEAN, index=False)
-    print("Base limpa gerada com sucesso!")
-
-# === VERIFICAÇÃO E GERAÇÃO DA BASE LIMPA ===
-if not os.path.exists(DATA_CLEAN):
-    gerar_base_limpa()
-
-# === CARREGAR BASE ===
-if not os.path.exists(DATA_CLEAN):
-    st.error(f"Arquivo limpo '{DATA_CLEAN}' não encontrado e não foi possível gerar a base limpa.")
-    st.stop()
-
-df = pd.read_csv(DATA_CLEAN)
+# === CARREGAR DADOS ===
+df = pd.read_csv("data/leiteintel_base_ampliada.csv")
 
 # === SIDEBAR ===
-estado, ano, opcao = mostrar_sidebar(df)
+st.sidebar.title("🔧 Configurações")
+
+estado = st.sidebar.selectbox("Escolha o estado:", sorted(df["estado"].unique()))
+ano = st.sidebar.slider("Escolha o ano:", int(df["ano"].min()), int(df["ano"].max()), step=1)
+
+opcao = st.sidebar.radio("O que deseja visualizar?", ["📊 Visão Geral", "📋 Tabelas", "🔮 Previsão", "📄 Gerar Relatório PDF"])
 
 # === FILTRO DE DADOS ===
 filtro = df[(df["estado"] == estado) & (df["ano"] == ano)]
@@ -56,18 +32,45 @@ preco_medio = filtro["preco_litro"].mean()
 temp_media = filtro["temperatura_media"].mean()
 chuva_media = filtro["chuvas_mm"].mean()
 
-# === VISÕES ===
+# === FUNÇÃO GRÁFICO ===
+def grafico_producao():
+    fig, ax = plt.subplots(figsize=(10, 4))
+    sns.lineplot(data=filtro, x="mes", y="producao_litros", hue="tipo_producao", marker="o", ax=ax)
+    plt.title("Produção Mensal por Tipo de Produção")
+    plt.xlabel("Mês")
+    plt.ylabel("Produção (litros)")
+    plt.legend(title="Tipo de Produção", bbox_to_anchor=(1.05, 1), loc='upper left')
+    return fig
+
+def gerar_texto_analitico(estado, ano, prod_medio, preco_medio, temp_media, chuva_media, producao_prevista=None):
+    texto = f"""
+No ano de {ano}, o estado de {estado} apresentou uma produção média de leite de aproximadamente {int(prod_medio):,} litros.  
+O preço médio pago por litro foi de R$ {preco_medio:.2f}, indicando um mercado {"favorável" if preco_medio > 3.5 else "moderado"} para os produtores.  
+
+As condições climáticas mostraram uma temperatura média de {temp_media:.1f} °C e um índice pluviométrico de {chuva_media:.1f} mm, fatores importantes que influenciam diretamente na produção.
+
+"""
+    if producao_prevista:
+        texto += f"\nCom base nas variáveis observadas, estima-se uma produção futura de aproximadamente {int(producao_prevista):,} litros, o que pode indicar uma tendência de {'crescimento' if producao_prevista > prod_medio else 'estabilidade ou queda'} na produção para o próximo período.\n"
+
+    texto += """
+Esta análise auxilia técnicos e produtores a entenderem melhor as condições atuais e planejarem estratégias para otimizar a produção e a rentabilidade na cadeia do leite.
+"""
+    return texto.strip()
+
+# === VISÃO GERAL ===
 if opcao == "📊 Visão Geral":
     st.title("📊 LeiteIntel — Painel de Inteligência de Produção de Leite")
     st.markdown(f"""
-O **LeiteIntel** é um sistema de apoio à decisão para análise da cadeia produtiva do leite.
+O **LeiteIntel** é um sistema de apoio à decisão voltado para análise da cadeia produtiva do leite no Brasil.  
 Você está visualizando os dados de **{estado} - {ano}**.
 """)
-    st.pyplot(grafico_producao(filtro))
+    st.pyplot(grafico_producao())
 
+# === TABELAS ===
 elif opcao == "📋 Tabelas":
     st.title("📋 Análise de Tabelas")
-
+    
     col1, col2, col3, col4 = st.columns(4)
     col1.metric("Produção Média", f'{prod_medio:,.0f} litros')
     col2.metric("Preço Médio", f'R$ {preco_medio:.2f}')
@@ -76,12 +79,23 @@ elif opcao == "📋 Tabelas":
 
     st.markdown("### 🧮 Médias por Tipo de Produção")
     tabela_producao = filtro.groupby("tipo_producao")[["producao_litros", "preco_litro"]].mean().round(1).reset_index()
+    tabela_producao = tabela_producao.rename(columns={
+        "tipo_producao": "Tipo de Produção",
+        "producao_litros": "Produção / litros",
+        "preco_litro": "Preço / R$"
+    })
     st.dataframe(tabela_producao)
 
     st.markdown("### 🧪 Médias por Uso de Tecnologia")
     tabela_tecnologia = filtro.groupby("uso_tecnologia")[["producao_litros", "preco_litro"]].mean().round(1).reset_index()
+    tabela_tecnologia = tabela_tecnologia.rename(columns={
+        "uso_tecnologia": "Uso de Tecnologia",
+        "producao_litros": "Produção / litros",
+        "preco_litro": "Preço / R$"
+    })
     st.dataframe(tabela_tecnologia)
 
+# === PREVISÃO ===
 elif opcao == "🔮 Previsão":
     st.title("🔮 Previsão de Produção de Leite")
     st.markdown("Faça simulações com variáveis para prever a produção estimada.")
@@ -94,7 +108,20 @@ elif opcao == "🔮 Previsão":
     preco_input = col7.slider("Preço por litro (R$)", 1.0, 6.0, float(round(preco_medio, 2)))
     tipo_input = col8.selectbox("Tipo de Produção", df["tipo_producao"].unique())
 
-    modelo = treinar_modelo(df[["temperatura_media", "chuvas_mm", "preco_litro", "tipo_producao", "producao_litros"]])
+    # Modelo
+    df_modelo = df[["temperatura_media", "chuvas_mm", "preco_litro", "tipo_producao", "producao_litros"]]
+    X = df_modelo.drop("producao_litros", axis=1)
+    y = df_modelo["producao_litros"]
+
+    preproc = ColumnTransformer([
+        ("onehot", OneHotEncoder(), ["tipo_producao"])
+    ], remainder='passthrough')
+
+    modelo = Pipeline([
+        ("prep", preproc),
+        ("reg", LinearRegression())
+    ])
+    modelo.fit(X, y)
 
     entrada = pd.DataFrame([{
         "temperatura_media": temperatura_input,
@@ -106,26 +133,156 @@ elif opcao == "🔮 Previsão":
     producao_prevista = modelo.predict(entrada)[0]
     st.success(f"📈 Produção prevista: **{int(producao_prevista):,} litros**")
 
+# === RELATÓRIO PDF ===
 elif opcao == "📄 Gerar Relatório PDF":
-    st.title("📄 Gerar Relatório Interpretado")
+    st.title("📄 Personalizar e Gerar Relatório")
 
-    resumo = f"""
-No período analisado, o estado de {estado} apresentou uma produção média de {int(prod_medio):,} litros de leite,
-com preço médio de R$ {preco_medio:.2f}/litro. A temperatura média foi de {temp_media:.1f} °C e a precipitação média foi de {chuva_media:.1f} mm.
+    st.markdown("Customize o relatório antes de gerar o PDF com base em seus objetivos.")
 
-Este relatório visa auxiliar produtores e técnicos na tomada de decisão com base em dados históricos.
-"""
-    st.markdown("### Texto que será incluído no PDF:")
-    st.code(resumo)
+    # Escolhas do usuário
+    estado_rel = st.selectbox("📍 Escolha o estado para o relatório:", sorted(df["estado"].unique()), index=list(df["estado"].unique()).index(estado))
+    ano_rel = st.slider("📅 Escolha o ano:", int(df["ano"].min()), int(df["ano"].max()), value=ano)
 
-    if st.button("📥 Gerar PDF"):
-        caminho_pdf = f"relatorios/relatorio_{estado}_{ano}.pdf"
-        os.makedirs(os.path.dirname(caminho_pdf), exist_ok=True)
-        gerar_pdf_resumo(resumo, caminho_pdf)
-        with open(caminho_pdf, "rb") as file:
-            st.download_button(
-                label="📄 Baixar PDF",
-                data=file,
-                file_name=f"relatorio_leiteintel_{estado}_{ano}.pdf",
-                mime="application/pdf"
-            )
+    filtro_rel = df[(df["estado"] == estado_rel) & (df["ano"] == ano_rel)]
+
+    prod_medio = filtro_rel["producao_litros"].mean()
+    preco_medio = filtro_rel["preco_litro"].mean()
+    temp_media = filtro_rel["temperatura_media"].mean()
+    chuva_media = filtro_rel["chuvas_mm"].mean()
+
+    # Modelo para previsão no relatório
+    df_modelo = df[["temperatura_media", "chuvas_mm", "preco_litro", "tipo_producao", "producao_litros"]]
+    X = df_modelo.drop("producao_litros", axis=1)
+    y = df_modelo["producao_litros"]
+
+    modelo = Pipeline([
+        ("prep", ColumnTransformer([("onehot", OneHotEncoder(), ["tipo_producao"])], remainder='passthrough')),
+        ("reg", LinearRegression())
+    ])
+    modelo.fit(X, y)
+
+    tipo_base = filtro_rel["tipo_producao"].mode()[0]
+    entrada_rel = pd.DataFrame([{
+        "temperatura_media": temp_media,
+        "chuvas_mm": chuva_media,
+        "preco_litro": preco_medio,
+        "tipo_producao": tipo_base
+    }])
+    producao_prevista = modelo.predict(entrada_rel)[0]
+
+    # Gerar texto analítico dinâmico
+    texto_analitico = gerar_texto_analitico(
+        estado_rel, ano_rel, prod_medio, preco_medio, temp_media, chuva_media, producao_prevista
+    )
+
+    # Opções
+    st.markdown("### 🧩 Escolha o que incluir no relatório:")
+    incluir_grafico = st.checkbox("📈 Incluir gráfico de produção", value=True)
+    incluir_tab_tipo = st.checkbox("📋 Tabela por tipo de produção", value=True)
+    incluir_tab_tecn = st.checkbox("🧪 Tabela por uso de tecnologia", value=True)
+    incluir_previsao = st.checkbox("🔮 Incluir previsão de produção", value=True)
+    incluir_texto = st.checkbox("📝 Incluir texto analítico", value=True)
+
+    # Prévia na tela
+    st.markdown("## 👁️ Pré-visualização do Relatório")
+
+    st.markdown(f"**Resumo — {estado_rel} - {ano_rel}:**")
+    st.write(f"• Produção média: {int(prod_medio):,} litros")
+    st.write(f"• Preço médio: R$ {preco_medio:.2f}")
+    st.write(f"• Temperatura média: {temp_media:.1f} °C")
+    st.write(f"• Chuva média: {chuva_media:.1f} mm")
+
+    if incluir_texto:
+        st.markdown("### 📝 Análise dos Dados")
+        st.write(texto_analitico)
+
+    if incluir_grafico:
+        fig_rel, ax = plt.subplots(figsize=(10, 4))
+        sns.lineplot(data=filtro_rel, x="mes", y="producao_litros", hue="tipo_producao", marker="o", ax=ax)
+        plt.title("Produção Mensal por Tipo de Produção")
+        plt.xlabel("Mês")
+        plt.ylabel("Produção (litros)")
+        st.pyplot(fig_rel)
+    else:
+        fig_rel = None
+
+    if incluir_tab_tipo:
+        st.markdown("### 📋 Tabela por Tipo de Produção")
+        tabela_producao_rel = filtro_rel.groupby("tipo_producao")[["producao_litros", "preco_litro"]].mean().round(1).reset_index()
+        tabela_producao_rel = tabela_producao_rel.rename(columns={
+            "tipo_producao": "Tipo de Produção",
+            "producao_litros": "Produção / litros",
+            "preco_litro": "Preço / R$"
+        })
+        st.dataframe(tabela_producao_rel)
+    else:
+        tabela_producao_rel = pd.DataFrame()
+
+    if incluir_tab_tecn:
+        st.markdown("### 🧪 Tabela por Uso de Tecnologia")
+        tabela_tecnologia_rel = filtro_rel.groupby("uso_tecnologia")[["producao_litros", "preco_litro"]].mean().round(1).reset_index()
+        tabela_tecnologia_rel = tabela_tecnologia_rel.rename(columns={
+            "uso_tecnologia": "Uso de Tecnologia",
+            "producao_litros": "Produção / litros",
+            "preco_litro": "Preço / R$"
+        })
+        st.dataframe(tabela_tecnologia_rel)
+    else:
+        tabela_tecnologia_rel = pd.DataFrame()
+
+    # Função para gerar relatório
+    def gerar_relatorio_pdf_personalizado():
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_font("Arial", size=12)
+
+        pdf.set_font("Arial", style="B", size=14)
+        pdf.cell(200, 10, txt="Relatório Personalizado - LeiteIntel", ln=True, align='C')
+        pdf.set_font("Arial", size=12)
+        pdf.cell(200, 10, txt=f"Estado: {estado_rel} | Ano: {ano_rel}", ln=True)
+        pdf.ln(5)
+
+        if incluir_texto:
+            pdf.multi_cell(0, 8, texto_analitico)
+
+        # Gráfico
+        if incluir_grafico and fig_rel:
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as tmpfile:
+                fig_rel.savefig(tmpfile.name, bbox_inches='tight')
+                pdf.image(tmpfile.name, x=10, y=None, w=190)
+                tmpfile.close()
+                os.unlink(tmpfile.name)
+
+        # Tabela tipo produção
+        if incluir_tab_tipo and not tabela_producao_rel.empty:
+            pdf.add_page()
+            pdf.set_font("Arial", style="B", size=12)
+            pdf.cell(200, 10, txt="Médias por Tipo de Produção", ln=True)
+            pdf.set_font("Arial", size=11)
+            for i, row in tabela_producao_rel.iterrows():
+                pdf.cell(200, 8, txt=f"{row['Tipo de Produção']}: {row['Produção / litros']} litros, R$ {row['Preço / R$']}/litro", ln=True)
+
+        # Tabela uso tecnologia
+        if incluir_tab_tecn and not tabela_tecnologia_rel.empty:
+            pdf.ln(5)
+            pdf.set_font("Arial", style="B", size=12)
+            pdf.cell(200, 10, txt="Médias por Uso de Tecnologia", ln=True)
+            pdf.set_font("Arial", size=11)
+            for i, row in tabela_tecnologia_rel.iterrows():
+                pdf.cell(200, 8, txt=f"{row['Uso de Tecnologia']}: {row['Produção / litros']} litros, R$ {row['Preço / R$']}/litro", ln=True)
+
+        return pdf
+
+    st.markdown("---")
+    if st.button("📥 Gerar e Baixar Relatório PDF Personalizado"):
+        relatorio = gerar_relatorio_pdf_personalizado()
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_pdf:
+            relatorio.output(tmp_pdf.name)
+            with open(tmp_pdf.name, "rb") as file:
+                st.download_button(
+                    label="📥 Baixar PDF",
+                    data=file,
+                    file_name=f"relatorio_leiteintel_{estado_rel}_{ano_rel}.pdf",
+                    mime="application/pdf"
+                )
+            os.unlink(tmp_pdf.name)
