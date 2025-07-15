@@ -262,7 +262,6 @@ elif opcao == "📄 Gerar Relatório PDF":
             for i, row in tabela_producao_rel.iterrows():
                 pdf.cell(200, 8, txt=f"{row['Tipo de Produção']}: {row['Produção / litros']} litros, R$ {row['Preço / R$']}/litro", ln=True)
 
-        # Tabela uso tecnologia
         if incluir_tab_tecn and not tabela_tecnologia_rel.empty:
             pdf.ln(5)
             pdf.set_font("Arial", style="B", size=12)
