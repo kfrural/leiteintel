@@ -42,6 +42,22 @@ def grafico_producao():
     plt.legend(title="Tipo de Produção", bbox_to_anchor=(1.05, 1), loc='upper left')
     return fig
 
+def gerar_texto_analitico(estado, ano, prod_medio, preco_medio, temp_media, chuva_media, producao_prevista=None):
+    texto = f"""
+No ano de {ano}, o estado de {estado} apresentou uma produção média de leite de aproximadamente {int(prod_medio):,} litros.  
+O preço médio pago por litro foi de R$ {preco_medio:.2f}, indicando um mercado {"favorável" if preco_medio > 3.5 else "moderado"} para os produtores.  
+
+As condições climáticas mostraram uma temperatura média de {temp_media:.1f} °C e um índice pluviométrico de {chuva_media:.1f} mm, fatores importantes que influenciam diretamente na produção.
+
+"""
+    if producao_prevista:
+        texto += f"\nCom base nas variáveis observadas, estima-se uma produção futura de aproximadamente {int(producao_prevista):,} litros, o que pode indicar uma tendência de {'crescimento' if producao_prevista > prod_medio else 'estabilidade ou queda'} na produção para o próximo período.\n"
+
+    texto += """
+Esta análise auxilia técnicos e produtores a entenderem melhor as condições atuais e planejarem estratégias para otimizar a produção e a rentabilidade na cadeia do leite.
+"""
+    return texto.strip()
+
 # === VISÃO GERAL ===
 if opcao == "📊 Visão Geral":
     st.title("📊 LeiteIntel — Painel de Inteligência de Produção de Leite")
@@ -63,7 +79,6 @@ elif opcao == "📋 Tabelas":
 
     st.markdown("### 🧮 Médias por Tipo de Produção")
     tabela_producao = filtro.groupby("tipo_producao")[["producao_litros", "preco_litro"]].mean().round(1).reset_index()
-    # Renomear colunas para mais amigáveis
     tabela_producao = tabela_producao.rename(columns={
         "tipo_producao": "Tipo de Produção",
         "producao_litros": "Produção / litros",
@@ -135,12 +150,38 @@ elif opcao == "📄 Gerar Relatório PDF":
     temp_media = filtro_rel["temperatura_media"].mean()
     chuva_media = filtro_rel["chuvas_mm"].mean()
 
+    # Modelo para previsão no relatório
+    df_modelo = df[["temperatura_media", "chuvas_mm", "preco_litro", "tipo_producao", "producao_litros"]]
+    X = df_modelo.drop("producao_litros", axis=1)
+    y = df_modelo["producao_litros"]
+
+    modelo = Pipeline([
+        ("prep", ColumnTransformer([("onehot", OneHotEncoder(), ["tipo_producao"])], remainder='passthrough')),
+        ("reg", LinearRegression())
+    ])
+    modelo.fit(X, y)
+
+    tipo_base = filtro_rel["tipo_producao"].mode()[0]
+    entrada_rel = pd.DataFrame([{
+        "temperatura_media": temp_media,
+        "chuvas_mm": chuva_media,
+        "preco_litro": preco_medio,
+        "tipo_producao": tipo_base
+    }])
+    producao_prevista = modelo.predict(entrada_rel)[0]
+
+    # Gerar texto analítico dinâmico
+    texto_analitico = gerar_texto_analitico(
+        estado_rel, ano_rel, prod_medio, preco_medio, temp_media, chuva_media, producao_prevista
+    )
+
     # Opções
     st.markdown("### 🧩 Escolha o que incluir no relatório:")
     incluir_grafico = st.checkbox("📈 Incluir gráfico de produção", value=True)
     incluir_tab_tipo = st.checkbox("📋 Tabela por tipo de produção", value=True)
     incluir_tab_tecn = st.checkbox("🧪 Tabela por uso de tecnologia", value=True)
     incluir_previsao = st.checkbox("🔮 Incluir previsão de produção", value=True)
+    incluir_texto = st.checkbox("📝 Incluir texto analítico", value=True)
 
     # Prévia na tela
     st.markdown("## 👁️ Pré-visualização do Relatório")
@@ -150,6 +191,10 @@ elif opcao == "📄 Gerar Relatório PDF":
     st.write(f"• Preço médio: R$ {preco_medio:.2f}")
     st.write(f"• Temperatura média: {temp_media:.1f} °C")
     st.write(f"• Chuva média: {chuva_media:.1f} mm")
+
+    if incluir_texto:
+        st.markdown("### 📝 Análise dos Dados")
+        st.write(texto_analitico)
 
     if incluir_grafico:
         fig_rel, ax = plt.subplots(figsize=(10, 4))
@@ -185,32 +230,6 @@ elif opcao == "📄 Gerar Relatório PDF":
     else:
         tabela_tecnologia_rel = pd.DataFrame()
 
-    # Previsão
-    if incluir_previsao:
-        df_modelo = df[["temperatura_media", "chuvas_mm", "preco_litro", "tipo_producao", "producao_litros"]]
-        X = df_modelo.drop("producao_litros", axis=1)
-        y = df_modelo["producao_litros"]
-
-        modelo = Pipeline([
-            ("prep", ColumnTransformer([("onehot", OneHotEncoder(), ["tipo_producao"])], remainder='passthrough')),
-            ("reg", LinearRegression())
-        ])
-        modelo.fit(X, y)
-
-        tipo_base = filtro_rel["tipo_producao"].mode()[0]
-        entrada = pd.DataFrame([{
-            "temperatura_media": temp_media,
-            "chuvas_mm": chuva_media,
-            "preco_litro": preco_medio,
-            "tipo_producao": tipo_base
-        }])
-        producao_prevista = modelo.predict(entrada)[0]
-
-        st.markdown("### 🔮 Previsão de Produção")
-        st.success(f"Produção esperada com base nas variáveis: **{int(producao_prevista):,} litros**")
-    else:
-        producao_prevista = None
-
     # Função para gerar relatório
     def gerar_relatorio_pdf_personalizado():
         pdf = FPDF()
@@ -223,15 +242,8 @@ elif opcao == "📄 Gerar Relatório PDF":
         pdf.cell(200, 10, txt=f"Estado: {estado_rel} | Ano: {ano_rel}", ln=True)
         pdf.ln(5)
 
-        interpretacao = f"""
-No período analisado, o estado de {estado_rel} apresentou uma produção média de {int(prod_medio):,} litros de leite, com preço médio de R$ {preco_medio:.2f}/litro. A temperatura média foi de {temp_media:.1f} °C, com um índice pluviométrico de {chuva_media:.1f} mm.
-
-A análise busca auxiliar produtores, técnicos e pesquisadores na tomada de decisão e no planejamento da cadeia produtiva do leite.
-"""
-        if producao_prevista:
-            interpretacao += f"\n\nCom base nas variáveis observadas, estima-se uma produção futura de aproximadamente {int(producao_prevista):,} litros."
-
-        pdf.multi_cell(0, 8, interpretacao)
+        if incluir_texto:
+            pdf.multi_cell(0, 8, texto_analitico)
 
         # Gráfico
         if incluir_grafico and fig_rel:
@@ -242,7 +254,7 @@ A análise busca auxiliar produtores, técnicos e pesquisadores na tomada de dec
                 os.unlink(tmpfile.name)
 
         # Tabela tipo produção
-        if not tabela_producao_rel.empty:
+        if incluir_tab_tipo and not tabela_producao_rel.empty:
             pdf.add_page()
             pdf.set_font("Arial", style="B", size=12)
             pdf.cell(200, 10, txt="Médias por Tipo de Produção", ln=True)
@@ -251,7 +263,7 @@ A análise busca auxiliar produtores, técnicos e pesquisadores na tomada de dec
                 pdf.cell(200, 8, txt=f"{row['Tipo de Produção']}: {row['Produção / litros']} litros, R$ {row['Preço / R$']}/litro", ln=True)
 
         # Tabela uso tecnologia
-        if not tabela_tecnologia_rel.empty:
+        if incluir_tab_tecn and not tabela_tecnologia_rel.empty:
             pdf.ln(5)
             pdf.set_font("Arial", style="B", size=12)
             pdf.cell(200, 10, txt="Médias por Uso de Tecnologia", ln=True)
