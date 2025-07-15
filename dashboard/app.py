@@ -133,7 +133,7 @@ elif opcao == "🔮 Previsão":
     producao_prevista = modelo.predict(entrada)[0]
     st.success(f"📈 Produção prevista: **{int(producao_prevista):,} litros**")
 
-# === RELATÓRIO PDF ===
+
 elif opcao == "📄 Gerar Relatório PDF":
     st.title("📄 Personalizar e Gerar Relatório")
 
