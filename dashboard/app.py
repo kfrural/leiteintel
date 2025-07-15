@@ -245,7 +245,7 @@ elif opcao == "📄 Gerar Relatório PDF":
         if incluir_texto:
             pdf.multi_cell(0, 8, texto_analitico)
 
-        # Gráfico
+
         if incluir_grafico and fig_rel:
             with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as tmpfile:
                 fig_rel.savefig(tmpfile.name, bbox_inches='tight')
