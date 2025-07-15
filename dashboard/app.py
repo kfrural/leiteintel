@@ -170,7 +170,6 @@ elif opcao == "📄 Gerar Relatório PDF":
     }])
     producao_prevista = modelo.predict(entrada_rel)[0]
 
-
     texto_analitico = gerar_texto_analitico(
         estado_rel, ano_rel, prod_medio, preco_medio, temp_media, chuva_media, producao_prevista
     )
