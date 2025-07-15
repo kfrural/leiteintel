@@ -23,7 +23,7 @@ ano = st.sidebar.slider("Escolha o ano:", int(df["ano"].min()), int(df["ano"].ma
 
 opcao = st.sidebar.radio("O que deseja visualizar?", ["📊 Visão Geral", "📋 Tabelas", "🔮 Previsão", "📄 Gerar Relatório PDF"])
 
-# === FILTRO DE DADOS ===
+
 filtro = df[(df["estado"] == estado) & (df["ano"] == ano)]
 
 prod_medio = filtro["producao_litros"].mean()
