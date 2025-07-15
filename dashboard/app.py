@@ -12,10 +12,8 @@ import os
 
 st.set_page_config(page_title="LeiteIntel Dashboard", layout="wide")
 
-# === CARREGAR DADOS ===
 df = pd.read_csv("data/leiteintel_base_ampliada.csv")
 
-# === SIDEBAR ===
 st.sidebar.title("🔧 Configurações")
 
 estado = st.sidebar.selectbox("Escolha o estado:", sorted(df["estado"].unique()))
@@ -23,16 +21,14 @@ ano = st.sidebar.slider("Escolha o ano:", int(df["ano"].min()), int(df["ano"].ma
 
 opcao = st.sidebar.radio("O que deseja visualizar?", ["📊 Visão Geral", "📋 Tabelas", "🔮 Previsão", "📄 Gerar Relatório PDF"])
 
-# === FILTRO DE DADOS ===
+
 filtro = df[(df["estado"] == estado) & (df["ano"] == ano)]
 
-# === MÉTRICAS ===
 prod_medio = filtro["producao_litros"].mean()
 preco_medio = filtro["preco_litro"].mean()
 temp_media = filtro["temperatura_media"].mean()
 chuva_media = filtro["chuvas_mm"].mean()
 
-# === FUNÇÃO GRÁFICO ===
 def grafico_producao():
     fig, ax = plt.subplots(figsize=(10, 4))
     sns.lineplot(data=filtro, x="mes", y="producao_litros", hue="tipo_producao", marker="o", ax=ax)
@@ -58,7 +54,6 @@ Esta análise auxilia técnicos e produtores a entenderem melhor as condições 
 """
     return texto.strip()
 
-# === VISÃO GERAL ===
 if opcao == "📊 Visão Geral":
     st.title("📊 LeiteIntel — Painel de Inteligência de Produção de Leite")
     st.markdown(f"""
@@ -67,7 +62,6 @@ Você está visualizando os dados de **{estado} - {ano}**.
 """)
     st.pyplot(grafico_producao())
 
-# === TABELAS ===
 elif opcao == "📋 Tabelas":
     st.title("📋 Análise de Tabelas")
     
@@ -95,7 +89,6 @@ elif opcao == "📋 Tabelas":
     })
     st.dataframe(tabela_tecnologia)
 
-# === PREVISÃO ===
 elif opcao == "🔮 Previsão":
     st.title("🔮 Previsão de Produção de Leite")
     st.markdown("Faça simulações com variáveis para prever a produção estimada.")
@@ -108,7 +101,6 @@ elif opcao == "🔮 Previsão":
     preco_input = col7.slider("Preço por litro (R$)", 1.0, 6.0, float(round(preco_medio, 2)))
     tipo_input = col8.selectbox("Tipo de Produção", df["tipo_producao"].unique())
 
-    # Modelo
     df_modelo = df[["temperatura_media", "chuvas_mm", "preco_litro", "tipo_producao", "producao_litros"]]
     X = df_modelo.drop("producao_litros", axis=1)
     y = df_modelo["producao_litros"]
@@ -133,13 +125,11 @@ elif opcao == "🔮 Previsão":
     producao_prevista = modelo.predict(entrada)[0]
     st.success(f"📈 Produção prevista: **{int(producao_prevista):,} litros**")
 
-# === RELATÓRIO PDF ===
 elif opcao == "📄 Gerar Relatório PDF":
     st.title("📄 Personalizar e Gerar Relatório")
 
     st.markdown("Customize o relatório antes de gerar o PDF com base em seus objetivos.")
 
-    # Escolhas do usuário
     estado_rel = st.selectbox("📍 Escolha o estado para o relatório:", sorted(df["estado"].unique()), index=list(df["estado"].unique()).index(estado))
     ano_rel = st.slider("📅 Escolha o ano:", int(df["ano"].min()), int(df["ano"].max()), value=ano)
 
@@ -150,7 +140,6 @@ elif opcao == "📄 Gerar Relatório PDF":
     temp_media = filtro_rel["temperatura_media"].mean()
     chuva_media = filtro_rel["chuvas_mm"].mean()
 
-    # Modelo para previsão no relatório
     df_modelo = df[["temperatura_media", "chuvas_mm", "preco_litro", "tipo_producao", "producao_litros"]]
     X = df_modelo.drop("producao_litros", axis=1)
     y = df_modelo["producao_litros"]
@@ -170,12 +159,10 @@ elif opcao == "📄 Gerar Relatório PDF":
     }])
     producao_prevista = modelo.predict(entrada_rel)[0]
 
-    # Gerar texto analítico dinâmico
     texto_analitico = gerar_texto_analitico(
         estado_rel, ano_rel, prod_medio, preco_medio, temp_media, chuva_media, producao_prevista
     )
 
-    # Opções
     st.markdown("### 🧩 Escolha o que incluir no relatório:")
     incluir_grafico = st.checkbox("📈 Incluir gráfico de produção", value=True)
     incluir_tab_tipo = st.checkbox("📋 Tabela por tipo de produção", value=True)
@@ -183,7 +170,6 @@ elif opcao == "📄 Gerar Relatório PDF":
     incluir_previsao = st.checkbox("🔮 Incluir previsão de produção", value=True)
     incluir_texto = st.checkbox("📝 Incluir texto analítico", value=True)
 
-    # Prévia na tela
     st.markdown("## 👁️ Pré-visualização do Relatório")
 
     st.markdown(f"**Resumo — {estado_rel} - {ano_rel}:**")
@@ -230,7 +216,6 @@ elif opcao == "📄 Gerar Relatório PDF":
     else:
         tabela_tecnologia_rel = pd.DataFrame()
 
-    # Função para gerar relatório
     def gerar_relatorio_pdf_personalizado():
         pdf = FPDF()
         pdf.add_page()
@@ -245,7 +230,6 @@ elif opcao == "📄 Gerar Relatório PDF":
         if incluir_texto:
             pdf.multi_cell(0, 8, texto_analitico)
 
-        # Gráfico
         if incluir_grafico and fig_rel:
             with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as tmpfile:
                 fig_rel.savefig(tmpfile.name, bbox_inches='tight')
@@ -253,7 +237,6 @@ elif opcao == "📄 Gerar Relatório PDF":
                 tmpfile.close()
                 os.unlink(tmpfile.name)
 
-        # Tabela tipo produção
         if incluir_tab_tipo and not tabela_producao_rel.empty:
             pdf.add_page()
             pdf.set_font("Arial", style="B", size=12)
@@ -262,7 +245,6 @@ elif opcao == "📄 Gerar Relatório PDF":
             for i, row in tabela_producao_rel.iterrows():
                 pdf.cell(200, 8, txt=f"{row['Tipo de Produção']}: {row['Produção / litros']} litros, R$ {row['Preço / R$']}/litro", ln=True)
 
-        # Tabela uso tecnologia
         if incluir_tab_tecn and not tabela_tecnologia_rel.empty:
             pdf.ln(5)
             pdf.set_font("Arial", style="B", size=12)
