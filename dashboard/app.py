@@ -67,7 +67,6 @@ Você está visualizando os dados de **{estado} - {ano}**.
 """)
     st.pyplot(grafico_producao())
 
-
 elif opcao == "📋 Tabelas":
     st.title("📋 Análise de Tabelas")
     
