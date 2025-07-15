@@ -253,7 +253,6 @@ elif opcao == "📄 Gerar Relatório PDF":
                 tmpfile.close()
                 os.unlink(tmpfile.name)
 
-
         if incluir_tab_tipo and not tabela_producao_rel.empty:
             pdf.add_page()
             pdf.set_font("Arial", style="B", size=12)
